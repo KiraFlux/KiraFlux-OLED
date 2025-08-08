@@ -48,20 +48,16 @@ public:
     void init() const {
         static constexpr u8 init_commands[] = {
             CommandMode,
-            DisplayOff, // следует ли убрать эту строчку?
-            ClockDiv, 0x80,
-            ChargePump, 0x14,
-            AddressingMode, Horizontal,
-            NormalH,// Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
-            NormalV,// Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
-            Contrast, 0x7F,
-            SetVcomDetect, 0x40,
-            NormalDisplay, // Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
-            DisplayOn,
-            SetComPins, 0x12,
-            SetMultiplex, 0x3F,
-            ColumnAddr, 0, max_x, // Будет повторно сконфигурирован в update
-            PageAddr, 0, max_page // Будет повторно сконфигурирован в update
+            DisplayOff,                 // Выключение для безопасной конфигурации
+            ClockDiv, 0x80,             // Установка делителя частоты
+            ChargePump, 0x14,           // Активация внутреннего преобразователя
+            AddressingMode, Horizontal, // Горизонтальный режим адресации
+            Contrast, 0x7F,             // Контраст по умолчанию 127
+            SetVcomDetect, 0x40,        // Напряжение VCOM
+            NormalH, NormalV,           // Нормальная ориентация дисплея
+            DisplayOn,                  // Включение дисплея
+            SetComPins, 0x12,           // Конфигурация выводов (128x64)
+            SetMultiplex, 0x3F          // Мультиплексирование (64 строки)
         };
 
         Wire.begin();
