@@ -1,64 +1,77 @@
 ﻿#pragma once
 
 #include <Wire.h>
-#include "rs/primitives.hpp"
 
 
 namespace kf {
 
+/// OLED дисплей SSD1306 (128x64)
 struct SSD1306 {
 
 public:
 
-    static constexpr rs::u8 width = 128;
-    static constexpr rs::u8 height = 64;
+    using u8 = uint8_t;
+
+    /// Ширина дисплея в пикселях
+    static constexpr u8 width = 128;
+    /// Высота дисплея в пикселях
+    static constexpr u8 height = 64;
 
 private:
 
-    static constexpr rs::u8 max_x = width - 1;
-    static constexpr rs::u8 pages = (height + 7) / 8;
-    static constexpr rs::u8 max_page = pages - 1;
-    static constexpr rs::u16 buffer_size = width * pages;
+    /// Максимальный индекс столбца
+    static constexpr u8 max_x = width - 1;
+    /// Количество страниц (высота/8)
+    static constexpr u8 pages = (height + 7) / 8;
+    /// Максимальный индекс страницы
+    static constexpr u8 max_page = pages - 1;
 
 public:
-    rs::u8 buffer[buffer_size]{};
+
+    /// Размер буфера дисплея
+    static constexpr auto buffer_size = width * pages;
+    /// Видеобуфер дисплея (1024 байта)
+    u8 buffer[buffer_size]{};
 
 private:
-    const rs::u8 address;
+
+    /// I2C адрес дисплея
+    const u8 address;
 
 public:
 
-    explicit SSD1306(rs::u8 address = 0x3C) :
+    /// Конструктор с настройкой адреса
+    explicit SSD1306(u8 address = 0x3C) :
         address(address) {}
 
+    /// Инициализация дисплея
     void init() const {
-        Wire.begin();
-
-        Wire.beginTransmission(address);
-
-        static constexpr rs::u8 init_commands[] = {
+        static constexpr u8 init_commands[] = {
             CommandMode,
-            DisplayOff,
+            DisplayOff, // следует ли убрать эту строчку?
             ClockDiv, 0x80,
             ChargePump, 0x14,
             AddressingMode, Horizontal,
-            NormalH,
-            NormalV,
+            NormalH,// Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
+            NormalV,// Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
             Contrast, 0x7F,
             SetVcomDetect, 0x40,
-            NormalDisplay,
+            NormalDisplay, // Мне кажется, что по умолчанию он уже этот режим, следует ли убрать эту строчку?
             DisplayOn,
             SetComPins, 0x12,
             SetMultiplex, 0x3F,
-            ColumnAddr, 0, max_x,
-            PageAddr, 0, max_page
+            ColumnAddr, 0, max_x, // Будет повторно сконфигурирован в update
+            PageAddr, 0, max_page // Будет повторно сконфигурирован в update
         };
 
+        Wire.begin();
+        Wire.beginTransmission(address);
         Wire.write(init_commands, sizeof(init_commands));
         Wire.endTransmission();
     }
 
-    void setContrast(rs::u8 value) const {
+    /// Установка контрастности
+    void setContrast(u8 value) const {
         Wire.beginTransmission(address);
         Wire.write(CommandMode);
         Wire.write(Contrast);
@@ -66,81 +79,109 @@ public:
         Wire.endTransmission();
     }
 
+    /// Включение/выключение питания
     void setPower(bool on) {
         sendCommand(on ? DisplayOn : DisplayOff);
     }
 
+    /// Отражение по горизонтали
     void flipH(bool flip) {
         sendCommand(flip ? FlipH : NormalH);
     }
 
+    /// Отражение по вертикали
     void flipV(bool flip) {
         sendCommand(flip ? FlipV : NormalV);
     }
 
+    /// Инверсия цветов
     void invert(bool invert) {
         sendCommand(invert ? InvertDisplay : NormalDisplay);
     }
 
+    /// Обновление дисплея из буфера
     void update() {
-        static constexpr rs::size max_i2c_packet = 64;
+        static constexpr auto packet_size = 64; // Была замечена максимальная производительность на ESP32
+
+        static constexpr u8 set_area_commands[] = {
+            CommandMode,
+            ColumnAddr, 0, max_x,
+            PageAddr, 0, max_page,
+        };
 
         Wire.beginTransmission(address);
-        Wire.write(CommandMode);
-        Wire.write(ColumnAddr);
-        Wire.write(0);
-        Wire.write(max_x);
-        Wire.write(PageAddr);
-        Wire.write(0);
-        Wire.write(max_page);
+        Wire.write(set_area_commands, sizeof(set_area_commands));
         Wire.endTransmission();
 
-        for (auto *p = buffer, *end = buffer + buffer_size; p < end; p += max_i2c_packet) {
+        for (auto *p = buffer, *end = buffer + buffer_size; p < end; p += packet_size) {
             Wire.beginTransmission(address);
             Wire.write(DataMode);
-            Wire.write(p, max_i2c_packet);
+            Wire.write(p, packet_size);
             Wire.endTransmission();
         }
     }
 
 private:
 
-    enum Command : rs::u8 {
+    /// Команды управления SSD1306
+    enum Command : u8 {
+        /// Выключение дисплея
         DisplayOff = 0xAE,
+        /// Включение дисплея
         DisplayOn = 0xAF,
 
+        /// Режим команд
         CommandMode = 0x00,
+        /// Режим одной команды
         OneCommandMode = 0x80,
+        /// Режим данных
         DataMode = 0x40,
 
+        /// Установка режима адресации
         AddressingMode = 0x20,
+        /// Горизонтальная адресация
         Horizontal = 0x00,
+        /// Вертикальная адресация
         Vertical = 0x01,
 
+        /// Обычная вертикальная ориентация
         NormalV = 0xC8,
+        /// Отраженная вертикальная ориентация
         FlipV = 0xC0,
+        /// Обычная горизонтальная ориентация
         NormalH = 0xA1,
+        /// Отраженная горизонтальная ориентация
         FlipH = 0xA0,
 
+        /// Установка контрастности
         Contrast = 0x81,
+        /// Настройка пинов COM
         SetComPins = 0xDA,
+        /// Настройка VCOM
         SetVcomDetect = 0xDB,
+        /// Делитель частоты
         ClockDiv = 0xD5,
+        /// Установка мультиплексирования
         SetMultiplex = 0xA8,
+        /// Установка столбцов
         ColumnAddr = 0x21,
+        /// Установка страниц
         PageAddr = 0x22,
+        /// Управление charge pump
         ChargePump = 0x8D,
 
+        /// Обычный режим отображения
         NormalDisplay = 0xA6,
+        /// Инверсный режим отображения
         InvertDisplay = 0xA7
     };
 
+    /// Отправка одиночной команды
     void sendCommand(Command command) const {
         Wire.beginTransmission(address);
         Wire.write(OneCommandMode);
-        Wire.write(static_cast<rs::u8>(command));
+        Wire.write(static_cast<u8>(command));
         Wire.endTransmission();
     }
 };
-}
-
+} // namespace kf

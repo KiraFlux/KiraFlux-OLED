@@ -1,0 +1,27 @@
+{
+  "name": "KiraFlux-OLED",
+  "version": "1.0.0",
+  "description": "Lightweight SSD1306 OLED display driver",
+  "keywords": [
+    "gfx",
+    "oled",
+    "ssd1306"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JamahaW/KiraFlux-OLED.git"
+  },
+  "authors": [
+    {
+      "name": "JamahaW",
+      "email": "kiraflux@duck.com"
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "*",
+  "dependencies": {},
+  "export": {
+    "include": "src/kf"
+  }
+}
