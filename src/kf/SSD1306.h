@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <Wire.h>
-#include "rs/primitives.hpp"
 
 
 namespace kf {
@@ -10,25 +9,29 @@ struct SSD1306 {
 
 public:
 
-    static constexpr rs::u8 width = 128;
-    static constexpr rs::u8 height = 64;
+    using u8 = uint8_t; // removed Rustify dependency
+
+    static constexpr u8 width = 128;
+    static constexpr u8 height = 64;
 
 private:
 
-    static constexpr rs::u8 max_x = width - 1;
-    static constexpr rs::u8 pages = (height + 7) / 8;
-    static constexpr rs::u8 max_page = pages - 1;
-    static constexpr rs::u16 buffer_size = width * pages;
+    static constexpr u8 max_x = width - 1;
+    static constexpr u8 pages = (height + 7) / 8;
+    static constexpr u8 max_page = pages - 1;
 
 public:
-    rs::u8 buffer[buffer_size]{};
+
+    static constexpr auto buffer_size = width * pages;
+
+    u8 buffer[buffer_size]{};
 
 private:
-    const rs::u8 address;
+    const u8 address;
 
 public:
 
-    explicit SSD1306(rs::u8 address = 0x3C) :
+    explicit SSD1306(u8 address = 0x3C) :
         address(address) {}
 
     void init() const {
@@ -36,7 +39,7 @@ public:
 
         Wire.beginTransmission(address);
 
-        static constexpr rs::u8 init_commands[] = {
+        static constexpr u8 init_commands[] = {
             CommandMode,
             DisplayOff,
             ClockDiv, 0x80,
@@ -58,7 +61,7 @@ public:
         Wire.endTransmission();
     }
 
-    void setContrast(rs::u8 value) const {
+    void setContrast(u8 value) const {
         Wire.beginTransmission(address);
         Wire.write(CommandMode);
         Wire.write(Contrast);
@@ -83,7 +86,7 @@ public:
     }
 
     void update() {
-        static constexpr rs::size max_i2c_packet = 64;
+        static constexpr auto max_i2c_packet = 64;
 
         Wire.beginTransmission(address);
         Wire.write(CommandMode);
@@ -105,7 +108,7 @@ public:
 
 private:
 
-    enum Command : rs::u8 {
+    enum Command : u8 {
         DisplayOff = 0xAE,
         DisplayOn = 0xAF,
 
@@ -138,7 +141,7 @@ private:
     void sendCommand(Command command) const {
         Wire.beginTransmission(address);
         Wire.write(OneCommandMode);
-        Wire.write(static_cast<rs::u8>(command));
+        Wire.write(static_cast<u8>(command));
         Wire.endTransmission();
     }
 };
