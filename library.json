@@ -9,11 +9,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/JamahaW/KiraFlux-OLED.git"
+    "url": "https://github.com/KiraFlux/KiraFlux-OLED.git"
   },
   "authors": [
     {
-      "name": "JamahaW",
+      "name": "KiraFlux",
       "email": "kiraflux@duck.com"
     }
   ],

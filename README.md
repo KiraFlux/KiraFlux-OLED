@@ -13,7 +13,7 @@
 PlatformIO (`platformio.ini`):
 
 ```ini
-lib_deps = https://github.com/JamahaW/KiraFlux-OLED.git
+lib_deps = https://github.com/KiraFlux/KiraFlux-OLED.git
 ```
 
 ## Использование
@@ -48,7 +48,7 @@ void loop() {
 }
 ```
 
-* Для продвинутой графики рекомендуется использовать [KiraFlux-GFX](https://github.com/JamahaW/KiraFlux-GFX.git)
+* Для продвинутой графики рекомендуется использовать [KiraFlux-GFX](https://github.com/KiraFlux/KiraFlux-GFX.git)
 
 ### Основные методы
 
