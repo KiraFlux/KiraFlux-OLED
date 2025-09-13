@@ -1,10 +1,16 @@
 {
   "name": "KiraFlux-OLED",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lightweight SSD1306 OLED display driver",
   "keywords": [
     "gfx",
     "oled",
+    "display",
+    "i2c",
+    "I2C",
+    "Wire",
+    "OLED",
+    "SSD1306",
     "ssd1306"
   ],
   "repository": {
