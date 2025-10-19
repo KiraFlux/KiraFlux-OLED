@@ -12,25 +12,29 @@ public:
 
     using u8 = uint8_t;
 
-    /// Ширина дисплея в пикселях
-    static constexpr u8 width = 128;
-    /// Высота дисплея в пикселях
-    static constexpr u8 height = 64;
-
 private:
 
+    /// Ширина дисплея в пикселях
+    static constexpr u8 screen_width{128};
+
+    /// Высота дисплея в пикселях
+    static constexpr u8 screen_height{64};
+
     /// Максимальный индекс столбца
-    static constexpr u8 max_x = width - 1;
+    static constexpr u8 max_x{screen_width - 1};
+
     /// Количество страниц (высота/8)
-    static constexpr u8 pages = (height + 7) / 8;
+    static constexpr u8 pages{(screen_height + 7) / 8};
+
     /// Максимальный индекс страницы
-    static constexpr u8 max_page = pages - 1;
+    static constexpr u8 max_page{pages - 1};
+
+    /// Размер буфера дисплея
+    static constexpr int buffer_size{screen_width * pages};
 
 public:
 
-    /// Размер буфера дисплея
-    static constexpr auto buffer_size = width * pages;
-    /// Видеобуфер дисплея (1024 байта)
+    /// буфер дисплея (1024 байта)
     u8 buffer[buffer_size]{};
 
 private:
@@ -42,10 +46,14 @@ public:
 
     /// Конструктор с настройкой адреса
     explicit SSD1306(u8 address = 0x3C) :
-        address(address) {}
+        address{address} {}
+
+    [[nodiscard]] constexpr u8 width() const { return screen_width; } // NOLINT(*-convert-member-functions-to-static)
+
+    [[nodiscard]] constexpr u8 height() const { return screen_height; } // NOLINT(*-convert-member-functions-to-static)
 
     /// Инициализация дисплея
-    void init() const {
+    [[nodiscard]] bool init() const {
         static constexpr u8 init_commands[] = {
             CommandMode,
             DisplayOff,                 // Выключение для безопасной конфигурации
@@ -59,11 +67,15 @@ public:
             SetComPins, 0x12,           // Конфигурация выводов (128x64)
             SetMultiplex, 0x3F          // Мультиплексирование (64 строки)
         };
+        if (not Wire.begin()) { return false; }
 
-        Wire.begin();
         Wire.beginTransmission(address);
-        Wire.write(init_commands, sizeof(init_commands));
-        Wire.endTransmission();
+
+        const auto written = Wire.write(init_commands, sizeof(init_commands));
+        if (sizeof(init_commands) != written) { return false; }
+
+        const u8 end_transmission_code = Wire.endTransmission();
+        return 0 == end_transmission_code;
     }
 
     /// Установка контрастности
@@ -81,12 +93,12 @@ public:
     }
 
     /// Отражение по горизонтали
-    void flipH(bool flip) {
+    void flipHorizontal(bool flip) {
         sendCommand(flip ? FlipH : NormalH);
     }
 
     /// Отражение по вертикали
-    void flipV(bool flip) {
+    void flipVertical(bool flip) {
         sendCommand(flip ? FlipV : NormalV);
     }
 
@@ -95,8 +107,8 @@ public:
         sendCommand(invert ? InvertDisplay : NormalDisplay);
     }
 
-    /// Обновление дисплея из буфера
-    void update() {
+    /// Отправить буфер на дисплей
+    void flush() {
         static constexpr auto packet_size = 64; // Была замечена максимальная производительность на ESP32
 
         static constexpr u8 set_area_commands[] = {
@@ -109,9 +121,9 @@ public:
         Wire.write(set_area_commands, sizeof(set_area_commands));
         Wire.endTransmission();
 
-        for (auto *p = buffer, *end = buffer + buffer_size; p < end; p += packet_size) {
+        for (u8 *p = buffer, *end = buffer + buffer_size; p < end; p += packet_size) {
             Wire.beginTransmission(address);
-            Wire.write(DataMode);
+            Wire.write(Command::DataMode);
             Wire.write(p, packet_size);
             Wire.endTransmission();
         }

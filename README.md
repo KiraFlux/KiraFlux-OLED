@@ -36,14 +36,14 @@ void loop() {
     memset(oled.buffer, 0, sizeof(oled.buffer));
     
     // Рисование диагональной линии
-    for (int x = 0; x < oled.width; x++) {
+    for (int x = 0; x < oled.screen_width; x++) {
         int y = x / 2;
         int page = y / 8;
         int bit = y % 8;
-        oled.buffer[page * oled.width + x] |= (1 << bit);
+        oled.buffer[page * oled.screen_width + x] |= (1 << bit);
     }
     
-    oled.update();  // Обновление дисплея
+    oled.flush();  // Обновление дисплея
     delay(100);
 }
 ```
@@ -57,17 +57,17 @@ void loop() {
 | `init()`             | Инициализация дисплея        |
 | `setContrast(value)` | Установка яркости (0-255)    |
 | `setPower(on)`       | Включение/выключение питания |
-| `flipH(flip)`        | Отражение по горизонтали     |
-| `flipV(flip)`        | Отражение по вертикали       |
+| `flipHorizontal(flip)`        | Отражение по горизонтали     |
+| `flipVertical(flip)`        | Отражение по вертикали       |
 | `invert(invert)`     | Инверсия цветов              |
-| `update()`           | Обновление дисплея из буфера |
+| `flush()`           | Обновление дисплея из буфера |
 
 ### Константы
 
 | Константа     | Значение | Описание             |
 |---------------|----------|----------------------|
-| `width`       | 128      | Ширина дисплея       |
-| `height`      | 64       | Высота дисплея       |
+| `screen_width`       | 128      | Ширина дисплея       |
+| `screen_height`      | 64       | Высота дисплея       |
 | `buffer_size` | 1024     | Размер буфера (байт) |
 
 ## Работа с буфером
